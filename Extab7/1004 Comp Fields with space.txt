@@ -1,0 +1,48 @@
+111 Street AveCIty, ST 12345CItyST123450.00 miles N1000.04CAARMLS# 4444444;DOM 90CAARMLS# 444444490Tax RecordsArmLthConv;0Conventional0s02/17;c01/17Settled saleX01/1702/17N;Res;NeutralResidentialFee Simple21780 sfN;Res;NeutralResidentialDT2;Colonial
+X2ColonialQ310C3742.12,5002500sf1000sfwo25001000Walk-out1rr1br1.1ba1o111.11AverageFWA/CACInsulWnd&Drs2ga2dw22CvP,Deck1 Fireplace
+
+111 Street AveCIty, ST 12345CItyST123450.00 miles N1000.04CAARMLS# 4444444;DOM 90CAARMLS# 444444490Tax RecordsArmLthTest;0Other (describe)Test0s02/17;c01/17Settled saleX01/1702/17N;Res;NeutralResidentialFee Simple21780 sfN;Res;NeutralResidentialDT2;Colonial
+X2ColonialQ310C3742.12,5002500sf1000sfwo25001000Walk-out1rr1br1.1ba1o111.11AverageFWA/CACInsulWnd&Drs2ga2dw22CvP,Deck1 Fireplace
+
+111 Street AveCIty, ST 12345CItyST123450.00 miles N1000.04CAARMLS# 4444444;DOM 90CAARMLS# 444444490Tax RecordsArmLthRH;0USDA - Rural housing0s02/17;c01/17Settled saleX01/1702/17N;Res;NeutralResidentialFee Simple21780 sfN;Res;NeutralResidentialDT2;Colonial
+x2ColonialQ310
+
+111 Street AveCIty, ST 12345CItyST12345CAARMLS# 4444444;DOM 90CAARMLS# 444444490
+
+111 Street AveCity, ST 12345CityST12345ProximitySale PricePrice per square foot
+#CAARMLS#;DOM
+#CAARMLS#
+#DOM
+#Tax Records
+#sale type
+#financing type;concession amount
+#financing type
+#concession amount
+#s02/17;c01/17
+#Settled sale
+#X
+#01/1702/17
+#N;Res;
+#NeutralResidential
+#Fee Simple
+#21780 sf
+#N;Res;
+#NeutralResidential
+#DT2;Colonial
+#X2Colonial
+#   Q3
+#10
+#C3
+#742.1
+#2,500
+#2500sf1000sfwo
+#25001000Walk-out
+#1rr1br1.1ba1o
+#111.11
+#Average
+#FWA/CAC
+#InsulWnd&Drs
+#2ga2dw
+#   22
+#CvP,Deck
+#1 Fireplace

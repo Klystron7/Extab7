@@ -1,0 +1,1209 @@
+sub CAAR_Resid {
+	my ($inrec)   = shift;
+	my ($outrec)  = shift;
+	my ($outfile) = shift;
+
+	my $tc = Lingua::EN::Titlecase->new("initialize titlecase");
+	my %addrArgs = (
+					 country                     => 'US',
+					 autoclean                   => 1,
+					 force_case                  => 1,
+					 abbreviate_subcountry       => 0,
+					 abbreviated_subcountry_only => 1
+	);
+	my $laddress = new Lingua::EN::AddressParse(%addrArgs);
+
+	my $address = $inrec->{'Address'};
+	my $streetnum = '';
+	# Street Number
+	if ($address =~ /(\d+)/) {
+		$streetnum = $1;
+	}
+	$outrec->{'StreetNum'} = $streetnum;
+	#-----------------------------------------
+
+	$outrec->{'StreetDir'} = '';
+	
+	#-----------------------------------------
+	
+	$outrec->{'Address1'} = $tc->title($inrec->{'Address'});
+	print($outrec->{'Address1'});
+	print "\n";
+	#-----------------------------------------
+
+	# Address 2
+	my $city = $inrec->{'City'};
+	$city = $tc->title($city);
+	$city =~ s/\(.*//;
+	$city =~ s/\s+$//;
+	my $address2 = $city . ", " . "VA " . $inrec->{'Zip'};
+	$outrec->{'Address2'} = $address2;
+
+	#-----------------------------------------
+
+	# Address 3
+	my $address3 = "VA" . " " . $inrec->{'Zip'};
+	$outrec->{'Address3'} = $address3;
+
+	#-----------------------------------------
+
+	# City
+	$outrec->{'City'} = $city;
+
+	#-----------------------------------------
+
+	# State
+	$outrec->{'State'} = "VA";
+
+	#-----------------------------------------
+
+	# Zip
+	$outrec->{'Zip'} = $inrec->{'Zip'};
+
+	#-----------------------------------------
+
+	# SalePrice
+	my $soldstatus = 0;
+	my $soldprice  = 0;
+	my $recstatus  = $inrec->{'Status'};
+	if ( $recstatus eq 'SLD' ) {
+		$soldstatus = 0;                        #sold
+		$soldprice  = $inrec->{'Sold Price'};
+	} elsif ( $recstatus =~ m /ACT/i ) {
+		$soldstatus = 1;                        #Active
+		$soldprice  = $inrec->{'Price'};
+	} elsif ( $recstatus =~ m /PND/i ) {
+		$soldstatus = 2;                        #Pending
+		$soldprice  = $inrec->{'Price'};
+	} elsif ( $recstatus =~ m /CNT/i ) {
+		$soldstatus = 3;                        #Contingent
+		$soldprice  = $inrec->{'Price'};
+	} elsif ( $recstatus =~ m /EXP/i ) {
+		$soldstatus = 4;                        #Withdrawn
+		$soldprice  = $inrec->{'Price'};
+	} else {
+
+		#nothing
+	}
+	$outrec->{'SalePrice'} = $soldprice;
+
+	#-----------------------------------------
+
+	# SoldStatus
+	$outrec->{'Status'} = $soldstatus;
+
+	#-----------------------------------------
+
+	# DataSource1
+	my $datasrc =
+	  "CAARMLS#" . $inrec->{'MLS#'} . ";DOM " . $inrec->{'DOM'};
+	$outrec->{'DataSource1'} = $datasrc;
+
+	#-----------------------------------------
+
+	# Data Source 2
+	$outrec->{'DataSource2'} = "Tax Records";
+
+	#-----------------------------------------
+
+	# Finance Concessions Line 1
+	# REO		REO sale
+	# Short		Short sale
+	# CrtOrd	Court ordered sale
+	# Estate	Estate sale
+	# Relo		Relocation sale
+	# NonArm	Non-arms length sale
+	# ArmLth	Arms length sale
+	# Listing	Listing
+
+	my $finconc1 = '';
+	if ( $soldstatus == 0 ) {	
+		my $agentnotes = $inrec->{'Agent Notes'};
+		
+		if ( $inrec->{'Foreclosur'} =~ /Yes/i ) {
+			$finconc1 = "REO";
+		} elsif ( $inrec->{'LenderOwn'} =~ /Yes/i ) {
+			$finconc1 = "REO";
+		} elsif ( $inrec->{'ShortSale'} =~ /Yes/i ) {
+			$finconc1 = "Short";
+		} elsif ( $agentnotes =~ /court ordered /i ) {
+			$finconc1 = "CrtOrd";
+		} elsif ( $agentnotes =~ /estate sale /i ) {
+			$finconc1 = "Estate";
+		} elsif ( $agentnotes =~ /relocation /i ) {
+			$finconc1 = "Relo";
+		} else {
+			$finconc1 = "ArmLth";
+		}
+	} elsif ( $soldstatus == 1 ) {
+		$finconc1 = "Listing";
+	} elsif ( $soldstatus == 2 ) {
+		$finconc1 = "Listing";
+	} elsif ( $soldstatus == 3 ) {
+		$finconc1 = "Listing";
+	} else {
+		$finconc1 = '';
+	}
+	$outrec->{'FinanceConcessions1'} = $finconc1;
+
+	#-----------------------------------------
+
+	# FinanceConcessions2
+	# Type of financing:
+	# FHA		FHA
+	# VA		VA
+	# Conv		Conventional
+	# Seller 	Seller
+	# Cash 		Cash
+	# RH		Rural Housing
+	# Other
+	# Format: 12 Char maximum
+
+	my $finconc2    = '';
+	my $conc        = '';
+	my $finconc2out = '';
+	if ( $soldstatus == 0 ) {
+		my $terms = $inrec->{'How Sold'};
+		if ( $terms eq '0' ) {
+			$finconc2 = "NotSpec";    #Not Specified
+		} elsif ( $terms =~ /CASH/ig ) {
+			$finconc2 = "Cash";
+		} elsif ( $terms =~ /CNVFI/ig ) {
+			$finconc2 = "Conv";
+		} elsif ( $terms =~ /CNVAR/ig ) {
+			$finconc2 = "Conv";
+		} elsif ( $terms =~ /FHA/ig ) {
+			$finconc2 = "FHA";
+		} elsif ( $terms =~ /VHDA/ig ) {
+			$finconc2 = "VHDA";
+		} elsif ( $terms =~ /FHMA/ig ) {
+			$finconc2 = "FHMA";
+		} elsif ( $terms =~ /VA/ig ) {
+			$finconc2 = "VA";
+		} elsif ( $terms =~ /ASSMT/ig ) {
+			$finconc2 = "AsmMtg";
+		} elsif ( $terms =~ /PVTMT/ig ) {
+			$finconc2 = "PrvMtg";
+		} elsif ( $terms =~ /OWNFN/ig ) {
+			$finconc2 = "Seller";
+		} elsif ( $terms =~ /Other/ig ) {
+			$finconc2 = "Other";
+		} elsif ( $terms =~ /USDAR/ig ) {
+			$finconc2 = "USDA";
+		}else {
+			$finconc2 = "Other";
+		}
+
+		$conc = 0;
+		if ( $inrec->{'SellerConc'} ) {
+			$conc = USA_Format( $inrec->{'SellerConc'} );
+			$conc =~ s/$//;
+			$conc = $inrec->{'SellerConc'};
+		}
+		$finconc2out = $finconc2 . ";" . $conc;
+	}
+
+	#$finconc2out = 'FHA;0';
+	$outrec->{'FinanceConcessions2'} = $finconc2out;
+
+	#-----------------------------------------
+
+	# DateSaleTime1
+	my $datesaletime1 = '';
+	if ( $soldstatus == 0 ) {
+		$datesaletime1 = $inrec->{'Close Date'};
+	} else {
+		$datesaletime1 = $inrec->{'Lst Date'};
+	}
+	my $dateonly = '';
+	if ( $datesaletime1 =~
+		 m/((0?[1-9]|1[012])\/(0?[1-9]|[12][0-9]|3[01])\/(19|20)\d\d)/ )
+	{
+		$dateonly = $1;
+	}
+	$outrec->{'DateSaleTime1'} = $dateonly;
+
+	#-----------------------------------------
+
+	# DateSaleTime2
+	my $datesaletime2 = '';
+	if ( $soldstatus == 0 ) {
+		my $sdate = $inrec->{'Close Date'};
+		my @da = ( $sdate =~ m/(\d+)/g );
+		$datesaletime2 = $da[2] . "/" . $da[0] . "/" . $da[1];
+
+		#time_manip('yyyy/mm/dd', $sdate );
+	}
+	$outrec->{'DateSaleTime2'} = $datesaletime2;
+
+	#-----------------------------------------
+	# SaleDateFormatted
+	# Sale and Contract formatted as mm/yy
+	my $sdatestr    = '';
+	my $cdatestr    = '';
+	my $wsdatestr   = '';
+	my $wcdatestr   = '';
+	my $fulldatestr = '';
+	if ( $soldstatus == 0 ) {
+		my $sdate = $inrec->{'Close Date'};
+		my @da = ( $sdate =~ m/(\d+)/g );
+
+		#my $m2digit = sprintf("%02d", $da[0]);
+		my $m2digit  = sprintf( "%02d", $da[0] );
+		my $yr2digit = sprintf( "%02d", $da[2] % 100 );
+		$sdatestr  = "s" . $m2digit . "/" . $yr2digit;
+		$wsdatestr = $m2digit . "/" . $yr2digit;
+
+		my $cdate = $inrec->{'Cont Date'};
+		if ( ( $cdate eq undef ) || ( $cdate eq "" ) ) {
+			$cdatestr = "Unk";
+		} else {
+			my @da = ( $cdate =~ m/(\d+)/g );
+			my $m2digit  = sprintf( "%02d", $da[0] );
+			my $yr2digit = sprintf( "%02d", $da[2] % 100 );
+			$cdatestr  = "c" . $m2digit . "/" . $yr2digit;
+			$wcdatestr = $m2digit . "/" . $yr2digit;
+		}
+		$fulldatestr = $sdatestr . ";" . $cdatestr;
+	} elsif (    ( $soldstatus == 1 )
+			  || ( $soldstatus == 2 )
+			  || ( $soldstatus == 3 ) )
+	{
+		$fulldatestr = "Active";
+	}
+
+	#$outrec->{'CloseDate'} = $wsdatestr;
+	#$outrec->{'ContrDate'} = $wcdatestr;
+
+	#$fulldatestr = 's12/11;c11/11';
+	$outrec->{'SaleDateFormatted'} = $fulldatestr;
+
+	#-----------------------------------------
+
+	# Location
+	# N - Neutral, B - Beneficial, A - Adverse
+	# Res		Residential
+	# Ind		Industrial
+	# Comm		Commercial
+	# BsyRd		Busy Road
+	# WtrFr		Water Front
+	# GlfCse	Golf Course
+	# AdjPrk	Adjacent to Park
+	# AdjPwr	Adjacent to Power Lines
+	# LndFl		Landfill
+	# PubTrn	Public Transportation
+
+	# basic neutral residential
+	my $loc1    = "N";
+	my $loc2    = "Res";
+	my $loc3    = '';
+	my $fullLoc = $loc1 . ";" . $loc2;
+
+	# special cases
+	#	my $spLoc;
+	#	$spLoc =~ s/Wintergreen Mountain Village/Wintergreen Mtn/ig;
+	#	$location =~ s/1800 Jefferson Park Ave/Charlottesville/ig;
+	#	my $fullLoc = $loc1 . ";" . $loc2;
+
+	$outrec->{'Location1'} = $fullLoc;
+
+	# Original Non-UAD Location
+	#	my $location;
+	#	my $subdiv;
+	#
+	#	$subdiv = $inrec->{'Subdivision'};
+	#	if ( $subdiv =~ m/NONE/ig ) {
+	#		$location = $tc->title($city);
+	#	} else {
+	#		$subdiv =~ s/`/'/;
+	#		$subdiv = $tc->title($subdiv);
+	#		$subdiv =~ s/\(.*//;
+	#		$subdiv =~ s/\s+$//;
+	#		$location = $subdiv;
+	#	}
+	#	$location =~ s/Wintergreen Mountain Village/Wintergreen Mtn/ig;
+	#	$location =~ s/1800 Jefferson Park Ave/Charlottesville/ig;
+	#
+	#	$outrec->{'Location1'} = $location;
+
+	#-----------------------------------------
+
+	# PropertyRights
+	$outrec->{'PropertyRights'} = "Fee Simple";
+
+	#-----------------------------------------
+
+	# Site
+	# MLS: LotSize
+	my $acres      = $inrec->{'Acres #'};
+	my $acresuffix = '';
+	my $outacres   = '';
+	if ( $acres < 0.001 ) {
+		$outacres = '';
+	}
+	if ( ( $acres > 0.001 ) && ( $acres < 1.0 ) ) {
+		my $acresf = $acres * 43560;
+		$outacres = sprintf( "%.0f", $acresf );
+		$acresuffix = " sf";
+	}
+	if ( $acres >= 1.0 ) {
+		$outacres = sprintf( "%.2f", $acres );
+		$acresuffix = " ac";
+	}
+	$outrec->{'LotSize'} = $outacres . $acresuffix;
+
+	#-----------------------------------------
+
+	# View
+	# N - Neutral, B - Beneficial, A - Adverse
+	# Wtr		Water View
+	# Pstrl		Pastoral View
+	# Woods		Woods View
+	# Park		Park View
+	# Glfvw		Golf View
+	# CtySky	City View Skyline View
+	# Mtn		Mountain View
+	# Res		Residential View
+	# CtyStr	CtyStr
+	# Ind		Industrial View
+	# PwrLn		Power Lines
+	# LtdSght	Limited Sight
+
+# MLS LotView
+# Blue Ridge | Garden | Golf | Mountain | Pastoral | Residential | Water | Woods
+# Water properties: Bay/Cove | Irrigation | Pond/Lake | Pond/Lake Site | River | Spring | Stream/Creek
+
+	my $view1    = "N";
+	my $view2    = 'Res';
+	my $view3    = '';
+	my $fullView = '';
+
+	my $MLSview = $inrec->{'View'};
+	if ( $MLSview =~ /Blue Ridge|Mountain/ig ) { #View-Blue Ridge
+		$view3 = "Mtn";
+	} elsif ( $MLSview =~ /Pastoral|Garden/ ) { #View-Pastoral
+		$view3 = "Pstrl";
+	} elsif ( $MLSview =~ /Water/ ) { #View-Water
+		$view3 = "Wtr";
+	} elsif ( $MLSview =~ /Woods/ ) { #View-Woods
+		$view3 = "Woods";
+	}
+
+	# Analyze view according to area
+	# Cville
+
+	# Albemarle
+
+	# Nelson
+
+	# Fluvanna
+
+	$fullView = $view1 . ";" . $view2 . ";" . $view3;
+	$outrec->{'LotView'} = $fullView;
+
+	#-----------------------------------------
+
+	# DesignAppeal
+	my $stories  = "";
+	my $design   = "";
+	my $design_uad = '';
+	my $storynum = '';
+	my $proptype = $inrec->{'PropType'};
+	my $atthome  = $inrec->{'Attached Home'};
+	$stories = $inrec->{'Level'};
+		
+	# Street Number
+	$stories =~ s/\D//;
+		
+	if ( $proptype =~ /Detached/ig ) {
+		$design  = $inrec->{'Design'};
+		$design_uad = 'DT'.$stories.';'.$design;
+	}
+	
+	elsif ( $proptype =~ /Attached/ig ) {
+		$design = $inrec->{'Design'};
+		if ( $atthome =~ /End Unit/ig ) {
+			$design_uad ='SD'. $stories . ';' . $design . '/End';
+		} elsif ( $atthome =~ /Duplex/ig ) {
+			$design_uad ='SD'. $stories . ';' . $design . '/Dup';
+		} else {
+			$design_uad ='AT'. $stories . ';' . $design . '/Int';
+		}
+	}
+	$outrec->{'DesignAppeal1'} = $design_uad;
+
+	#-----------------------------------------
+
+	# Age
+	my $age = 0;
+
+	#$age = $time{'yyyy'} - $inrec->{'Year Built'};
+	$age = localtime->year + 1900 - $inrec->{'YearBuilt'};
+	
+	$outrec->{'Age'} = $age;
+
+	#-----------------------------------------
+
+	# DesignConstructionQuality
+	# Q1 through Q6
+	my $extcond = '';
+
+	if ( $soldprice > 800000 ) {
+		$extcond = "Q1";
+	} elsif ( $soldprice > 500000 ) {
+		$extcond = "Q2";
+	} elsif ( $soldprice > 150000 ) {
+		$extcond = "Q3";
+	} elsif ( $soldprice > 50000 ) {
+		$extcond = "Q4";
+	} else {
+		$extcond = "";
+	}
+	$extcond = '';
+	$outrec->{'DesignConstrQual'} = $extcond;
+
+	#-----------------------------------------
+
+	# AgeCondition1
+	my $agecondition = '';
+	my $agecond      = '';
+	if ( $age <= 1 ) {
+		$agecond = "C1";
+	} else {
+		$agecond = "C3";
+	}
+
+#	my $kitcounter = $inrec->{"Kitchen Counters"};
+#	if ( $kitcounter =~ /Granite|Marble|Quartz|Soapstone|Wood|Solid Surface/ ) {
+#		$agecondition = "C2";
+#	} else {
+#		$agecondition = $agecond;
+#	}
+	$agecond = '';
+	$outrec->{'AgeCondition1'} = $agecond;
+
+	#-----------------------------------------
+	# CarStorage1
+	# UAD output example: 2ga2cp2dw, 2gd2cp2dw,
+	
+	my $garage = '';
+	my $gartype = '';
+	my $carport = '';
+	my $garnumcar = '';
+	my $cpnumcar = '';
+	my $dw = '';
+	my $nogar = 1;
+	my $nocp = 1;
+	my $nodw = 1;
+	my $carstortype = '';
+	my $garfeat = $inrec->{'Garage Features'};
+	
+	if ( $inrec->{'Garage'} eq 'Y' ) {
+	# check number of cars garage		
+		$garnumcar = $inrec->{'Garage#Car'};
+		if ( $garnumcar =~ /(\d)/ ) {
+			$garnumcar = $1;
+			# number of cars exists, so use that number
+		} else {
+			$garnumcar = 1;
+		}
+	
+		# check if attached/detached/built-in
+
+		if ( $garfeat =~ /Attached/){
+			$gartype = 'ga';
+		} elsif ( $garfeat =~ /Detached/) {
+			$gartype = 'gd';
+		} elsif ( $garfeat =~ /In Basement/) {
+			$gartype = 'bi';
+		}
+		
+		$carstortype = $garnumcar.$gartype;
+		$nogar = 0;
+	}
+	
+	# check for carport
+	$cpnumcar = $inrec->{'Carpt#Car'};
+	if ( $cpnumcar =~ /(\d)/ ) {
+			$cpnumcar = $1;
+			$nocp = 0;
+			$carstortype = $carstortype . $cpnumcar . 'cp';
+	}
+		
+	if ( $garfeat =~ /On Street Parking/) {
+		$dw = '';
+	}
+		
+	my $driveway = $inrec ->{'Driveway'};
+	if ($driveway =~ /Asphalt|Brick|Concrete|Dirt|Gravel|Riverstone/){
+		$dw = '2dw';	
+		$carstortype = $carstortype . $dw;
+	}
+	
+	if ($nogar && $nocp && $nodw) {
+		$carstortype = 'None'
+	}
+	
+	$outrec->{'CarStorage1'} = $carstortype;
+
+	#-----------------------------------------
+
+	# CoolingType
+	my $heat    = '';
+	my $cool    = '';
+	my $divider = "/";
+	my $cooling = $inrec->{'Air Conditioning'};
+	my $heating = $inrec->{'Heating'};
+	if ( ( $cooling =~ /Heat Pump/i ) || ( $heating =~ /Heat Pump/i ) ) {
+		$heat    = "HTP";
+		$cool    = '';
+		$divider = '';
+	} else {
+		if ( $cooling =~ /Central AC/ ) {
+			$cool = "CAC";
+		} else {
+			$cool = "No CAC";
+		}
+		if ( $heating =~ /Forced Air|Furnace|Ceiling|Gas|Liquid Propane/i ) {
+			$heat = "FWA";
+		} elsif ( $heating =~ /Electric/i ) {
+			$heat = "EBB";
+		} elsif ( $heating =~ /Baseboard|Circulator|Hot Water/i ) {
+			$heat = "HWBB";
+		} else {
+			$heat = $heating;
+		}
+	}
+	$outrec->{'CoolingType'} = $heat . $divider . $cool;
+
+	#-----------------------------------------
+
+	#23 FunctionalUtility
+	$outrec->{'FunctionalUtility'} = "Average";
+
+	#-----------------------------------------
+
+# EnergyEfficiencies1
+# EcoCert: LEED Certified | Energy Star | EarthCraft | Energy Wise | WaterSense® Certified Fixtures
+# Heating: Active Solar | Geothermal | Passive Solar
+# Windows: Insulated | Low-E
+# Water Heater: Instant | Solar | Tankless
+
+	# first check EcoCert
+	my $energyeff = 'None';
+	my $remarks   = $inrec->{'Remarks'};
+	my $windows   = $inrec->{'Windows'};
+	my $doors     = $inrec->{'Doors'};
+	my $heats     = $inrec->{'Heating'};
+	my $waterhtr  = $inrec->{'Water Heater'};
+	my $ewndd     = '';
+	my $eheat     = '';
+	my $ewhtr     = '';
+	if ( $remarks =~ /LEED/i ) {
+		$energyeff = "LEED Cert";
+	} elsif ( $remarks =~ /Energy Star/i ) {
+		$energyeff = "EnergyStar Cert";
+	} elsif ( $remarks =~ /EarthCraft /i ) {
+		$energyeff = "EartCraft Cert";
+	} elsif ( $remarks =~ /Energy Wise/i ) {
+		$energyeff = "EnergyWise Cert";
+	} else {
+		if ( $windows =~ /insulated|low-e/i ) {
+			$ewndd = "InsWnd ";
+		}
+		if ( $doors =~ /insul/i ) {
+			if ( $ewndd =~ /InsWnd/ig ) {
+				$ewndd = "InsWnd&Drs ";
+			} else {
+				$ewndd = "InsDrs ";
+			}
+		}
+		if ( $heats =~ /Solar/i ) {
+			$eheat = "Solar ";
+		}
+		if ( $heats =~ /Geothermal/i ) {
+			$eheat = $eheat . "GeoHTP ";
+		}
+		if ( $waterhtr =~ /Solar/ ) {
+			if ( $eheat !~ /Solar/ ) {
+				$ewhtr = "Solar ";
+			}
+		}
+		if ( $waterhtr =~ /Instant|Tankless/i ) {
+			$ewhtr = "InstHW";
+		}
+		$energyeff = $eheat . $ewhtr . $ewndd;
+		$energyeff =~ s/ /,/ig;
+		$energyeff =~ s/,$//ig;
+	}
+
+	$outrec->{'EnergyEfficiencies1'} = $energyeff;
+
+	#-----------------------------------------
+
+# Rooms
+# From CAAR MLS:
+# Room count includes rooms on levels other than Basement.
+# AtticApt, BasementApt, Bedroom, BilliardRm, Brkfast, BonusRm, ButlerPantry, ComboRm,
+# DarkRm, Den, DiningRm, ExerciseRm, FamRm, Foyer, Full Bath, Gallery, GarageApt, GreatRm,
+# Greenhse, Half Bath, HmOffice, HmTheater, InLaw Apt, Kitchen, Laundry, Library, LivingRm,
+# Loft, Master BR, MudRm, Parlor, RecRm, Sauna, SewingRm, SpaRm, Study/Library, SunRm, UtilityRm
+
+	my $rooms      = 0;
+	my $fullbath   = 0;
+	my $halfbath   = 0;
+	my $bedrooms   = 0;
+	my $bsRooms    = 0;
+	my $bsRecRm    = 0;
+	my $bsFullbath = 0;
+	my $bsHalfbath = 0;
+	my $bsBedrooms = 0;
+	my $bsOther    = 0;
+	my $bsRmCount  = 0;
+
+	#maximum of 30 rooms
+	#my @rmarr = split( /,/, $inrec->{'Rooms'} );
+	my $room = '';
+	my $indx  = 0;
+	my $rindx = 0;
+	my $rlim  = 30;
+	my $rmtype = '';
+	my $rmflr = '';
+	my $roomnum = ''; 
+	my $roomcount = '';	
+	my $roomname = '';
+	my $roomfieldname = '';
+	my $roomlevfieldname = '';
+	my $roomlev = '';
+	while ( $rindx < $rlim ) {
+		$roomcount = sprintf( "%02d", $rindx +1 );
+		$roomfieldname = 'Rm'.$roomcount;
+		$roomlevfieldname = $roomfieldname . 'Lv';
+		$roomname = $inrec->{$roomfieldname};
+		$roomlev = $inrec->{$roomlevfieldname};
+
+		#my $rmtype = $rmarr[$rindx];
+		#my $rmsz   = $rmarr[ $rindx + 1 ];
+		#my $rmflr  = $rmarr[ $rindx + 2 ];
+		#$rmtype =~ s/^\s+|\s+$//g;
+		#$rmflr  =~ s/ //g;
+		
+		$roomname =~ s/^\s+|\s+$//g;
+		$rmtype = $roomname;
+		$roomlev =~ s/ //g;
+		$rmflr = $roomlev;
+
+		if ( $rmflr !~ /Basement/ ) {
+			if ( $rmtype =~/Bedroom|Breakfast|Bonus|Den|Dining|Exercise|Family|Great|Home Office|Home Theater|Kitchen|Library|Living|Master|Mud|Parlor|Rec|Sauna|Sewing|Spa|Study|Library|Sun/i
+			  )
+			{
+				$rooms++;
+			}
+			if ( $rmtype =~ /Full Bath/i ) {
+				$fullbath++;
+			}
+			if ( $rmtype =~ /Half Bath/i ) {
+				$halfbath++;
+			}
+			if ( $rmtype =~ /Bedroom|Master/ ) {
+				$bedrooms++;
+			}
+		}
+		if ( $rmflr =~ /Basement/ ) {
+			if ( $rmtype =~
+				 /Bonus|Den|Family|Great|Library|Living|Rec|Study|Library/i )
+			{
+				$bsRecRm++;
+				$bsRmCount++;
+			}
+			if ( $rmtype =~/Breakfast|Dining|Exercise|Home Office|Home Theater|Kitchen|Mud|Parlor|Sauna|Sewing|Spa|Sun/i
+			  )
+			{
+				$bsOther++;
+				$bsRmCount++;
+			}
+			if ( $rmtype =~ /Full Bath/i ) {
+				$bsFullbath++;
+				$bsRmCount++;
+			}
+			if ( $rmtype =~ /Half Bath/i ) {
+				$bsHalfbath++;
+				$bsRmCount++;
+			}
+			if ( $rmtype =~ /Bedroom|Master/ ) {
+				$bsBedrooms++;
+				$bsRmCount++;
+			}
+		}
+
+		$indx++;
+		$rindx++
+		#$rindx = $indx * 3;
+
+	}
+	if ( $rooms < $bedrooms + 2 ) {
+		$rooms = $bedrooms + 2;
+	}
+
+	$outrec->{'Rooms'} = $rooms;
+
+	my $bsRmList = '';
+#	if ( $bsRmCount > 0 ) {
+#		if ( $bsRecRm > 0 )    { $bsRmList = $bsRecRm . "rr"; }
+#		if ( $bsBedrooms > 0 ) { $bsRmList = $bsRmList . $bsBedrooms . "br"; }
+#		if ( ( $bsFullbath + $bsHalfbath ) > 0 ) {
+#			$bsRmList = $bsRmList . $bsFullbath . "." . $bsHalfbath . "ba";
+#		}
+#		if ( $bsOther > 0 ) { $bsRmList = $bsRmList . $bsOther . "o"; }
+#	}
+	$bsRmList = $bsRecRm . 'rr' . $bsBedrooms . 'br' . $bsFullbath . '.' . $bsHalfbath . 'ba' . $bsOther . 'o';
+	
+	# Basement2
+	$outrec->{'Basement2'} = $bsRmList;
+
+	#-----------------------------------------
+
+	# Bedrooms
+	my $bedroomstot = $inrec->{'#Beds'};
+
+	$outrec->{'Beds'} = $bedrooms;
+
+	#-----------------------------------------
+
+	# Baths
+	my $baths = 0;
+	if ( $fullbath == 0 ) {
+		$fullbath = $inrec->{'#FBaths'};
+		$halfbath = $inrec->{'#HBaths'};
+	}
+	my $bathnum = $fullbath + $halfbath / 10;
+	my $bathstr = "$fullbath.$halfbath";
+	$baths = sprintf( "%.1f", $bathnum );
+	$outrec->{'Baths'} = $bathstr;
+
+	#-----------------------------------------
+
+	# BathsFull
+	$outrec->{'BathsFull'} = $fullbath;
+
+	#-----------------------------------------
+
+	# BathsHalf
+	$outrec->{'BathsHalf'} = $halfbath;
+
+	#-----------------------------------------
+
+	 # Basement1
+	 # Crawl | English | Finished | Full | Heated | Inside Access | Outside Access |
+	 # Partial | Partly Finished | Rough Bath Plumb | Shelving | Slab | Sump Pump |
+	 # Unfinished | Walk Out | Windows | Workshop
+
+	$outrec->{'Basement1'} = '';
+
+	#-----------------------------------------
+
+	# Basement2
+	#$outrec->{'Basement2'} = $bsmntfin;
+
+	#-----------------------------------------
+
+	$outrec->{'ExtraCompInfo2'} = '';
+
+	#-----------------------------------------
+
+	# ExtraCompInfo1 (Fireplaces)
+	my $fp;
+	my $fpout = '';
+	my $numFPword = $inrec->{'Fireplace'};
+	my $numFP = '';
+	
+	if ($numFPword =~ /One/ ) {
+		$numFP = 1;
+	} elsif ($numFPword =~ /Two/ ) {
+		$numFP = 2;
+	} elsif ($numFPword =~ /Three/ ) {
+		$numFP = 3;
+	} else {
+		$numFP = 0 
+	}
+
+	my $locFP = $inrec->{'Fireplace Location'};
+	my $locFPcnt = $locFP =~ (m/Basement|Bedroom|Den|Dining Room|Exterior Fireplace|Family Room|Foyer|Great Room|!
+								Home Office|Kitchen|Library|Living Room|Master Bedroom|Study/ig
+	);
+	if ( !$locFPcnt ) { $locFPcnt = 0 }
+
+	if ( $numFP >= $locFPcnt ) {
+		$fp = $numFP;
+	} elsif ( $locFPcnt >= $numFP ) {
+		$fp = $locFPcnt;
+	} elsif ( $numFP == 0 && $locFPcnt == 0 ) {
+		$fpout = "0 Fireplace";
+	}
+
+	if ( $fp == 0 ) {
+		$fpout = "0 Fireplace";
+	}
+
+	if ( $fp == 1 ) {
+		$fpout = $fp . " Fireplace";
+	} elsif ( $fp > 1 ) {
+		$fpout = $fp . " Fireplaces";
+	}
+
+	$outrec->{'ExtraCompInfo1'} = $fpout;
+
+	#-----------------------------------------
+
+	# SqFt Source: Appraisal, Builder, Other, Owner, Tax Assessor
+	my $sqftsrc = '';
+
+	#-----------------------------------------
+
+	# SqFt (after basement is determined)
+	# Square foot fields added to CAAR on 7/19/2011:
+	# SqFt Above Grade Fin
+	# SqFt Above Grade Total
+	# SqFt Above Grade UnFin
+	# SqFt Below Grade Fin
+	# SqFt Below Grade Total
+	# SqFt Below Grade Unfin
+	# SqFt Fin Total
+	# SqFt Garage Fin
+	# SqFt Garage Total
+	# SqFt Garage Unfin
+	# SqFt Total
+	# SqFt Unfin Total
+
+	my $sfAGFin = $inrec->{'AGFin'};
+	my $sfAGTot = $inrec->{'AGTotSF'};
+	my $sfAGUnF = $inrec->{'AGUnfin'};
+	my $sfBGFin = $inrec->{'BGFin'};
+	my $sfBGTot = $inrec->{'BGTotSF'};
+	my $sfBGUnF = $inrec->{'BGUnfin'};
+	my $sfFnTot = $inrec->{'TotFinSF'};
+	my $sfGaFin = $inrec->{'GarAGFin'};
+	my $sfGaTot = $inrec->{'GarTotAG'};
+	my $sfGaUnF = $inrec->{'GarAGUnf'};
+	my $sfTotal = $inrec->{'TotFinSF'};
+	my $sfUnTot = $inrec->{'TotUnfinSF'};
+
+	#my $listdate = Date::EzDate->new( $inrec->{'List Date'} );
+	#if ( $listdate >= $sfDate ) {
+	my $basType = "wo";
+	if ( $sfAGFin > 0 ) {
+		$outrec->{'SqFt'} = $sfAGFin;
+		if ( $sfBGTot == 0 ) {
+			$outrec->{'Basement1'} = "0sf";
+		} else {
+			my $basExit = $inrec->{'Bsmnt_2'};
+			if ( $basExit =~ /Walk Out/ig ) {
+				$basType = "wo";
+			} elsif ( $basExit =~ /Outside Entrance/ig ) {
+				$basType = "wu";
+			} elsif ( $basExit =~ /Inside Access/ig ) {
+				$basType = "in";
+			} 
+
+			#Walk Out
+			if ( $sfBGFin == 0 ) {
+				$outrec->{'Basement1'} = $sfBGTot . "sf" . 0 . $basType;
+			} else {
+				$outrec->{'Basement1'} =
+				  $sfBGTot . "sf" . $sfBGFin . "sf" . $basType;
+			}
+		}
+	} else {
+		# SF Above Grade not entered, use SqFt Fin total
+		my $sqft        = '';
+		my $sqftabvGrnd = '';
+		my $bsmntyn = $inrec->{'Bsmnt_1'};
+		my $bsmntfin = $inrec->{'Bsmnt_2'};
+		
+		if ( ( $sfAGFin eq '' ) | ( $sfAGFin eq undef ) | ( $sfAGFin == 0 ) ) {
+
+
+			$sfAGFin = $inrec->{'TotFinSF'};
+			$stories = $inrec->{'Levels'};
+			$sqft    = $sfAGFin;
+			if ( $bsmntyn eq 'No' ) {
+				$sqftabvGrnd = $sqft;
+
+			} elsif ( $bsmntfin eq 'Finished' ) {
+				if ( $stories eq '1 Story' ) {
+					$sqftabvGrnd = round( 0.5 * $sqft );
+				} elsif ( $stories eq '1.5 Story' ) {
+					$sqftabvGrnd = round( 0.6 * $sqft );
+				} elsif ( $stories eq '2 Story' ) {
+					$sqftabvGrnd = round( 0.67 * $sqft );
+				} else {
+					$sqftabvGrnd = round( 0.75 * $sqft );
+				}
+
+			} elsif ( $bsmntfin eq 'Partly Finished' ) {
+				if ( $stories eq '1 Story' ) {
+					$sqftabvGrnd = round( 0.67 * $sqft );
+				} elsif ( $stories eq '1.5 Story' ) {
+					$sqftabvGrnd = round( 0.75 * $sqft );
+				} elsif ( $stories eq '2 Story' ) {
+					$sqftabvGrnd = round( 0.8 * $sqft );
+				} else {
+					$sqftabvGrnd = round( 0.8 * $sqft );
+				}
+
+			} else {
+				$sqftabvGrnd = $sqft;
+			}
+
+		} else {
+			$sqftabvGrnd = $sfAGFin;
+		}
+
+		$outrec->{'SqFt'} = $sqftabvGrnd;
+	}
+	
+	#-----------------------------------------
+
+# Porch ()Porch/Patio/Deck)
+# Porch: Balcony | Brick | Deck | Front | Glassed | Patio | Porch | Rear | Screened | Side | Slate | Terrace
+	my $pchcnt = 0;
+	my $balcnt = 0;
+	my $dekcnt = 0;
+	my $patcnt = 0;
+	my $tercnt = 0;
+	
+	my $pchout = '';
+	my $pdp= $inrec->{'Structure-Deck/Porch'};
+	if ($pdp =~ /Porch[^ -]|Rear|Side/){
+		$pchout = "Pch ";
+		$pchcnt++;
+	}
+	if ($pdp =~ /Front/ig){
+		$pchout = $pchout . "FPc ";
+		$pchcnt++
+	}
+	if ($pdp =~ /Screened/ig){
+		$pchout = $pchout. "ScPc ";
+		$pchcnt++
+	}
+	if ($pdp =~ /Glassed/ig){
+		$pchout = $pchout. "EncPc ";
+		$pchcnt++
+	}
+	
+	$outrec->{'Porch'} = $pchout;
+
+	#-----------------------------------------
+
+	my $patout = '';
+	if ($pdp =~ /Patio[^ -]/){
+		$patout = "Pat ";
+	}
+	if ($pdp =~ /Covered/ig){
+		$patout = $pchout . "CvPat ";
+	}
+	$outrec->{'Patio'} = $patout;
+
+	#-----------------------------------------
+
+	my $dkout = '';
+	if ($pdp =~ /Deck/){
+		$patout = "Deck ";
+	}
+	$outrec->{'Deck'} = $dkout;
+
+	#-----------------------------------------
+
+	# FencePorchPatio2
+	my $totpchcnt = 0;
+	my $pdpout    = '';
+
+	$pdpout = $pchout . $patout . $dkout;
+	$outrec->{'FencePorchPatio2'} = $pdpout;
+
+	#-----------------------------------------
+
+	# ExtraCompInfo3
+	$outrec->{'ExtraCompInfo3'} = $pdpout;
+
+	#-----------------------------------------
+
+	# Notes1
+	$outrec->{'Notes1'} = "Imported from CAAR";
+
+	#-----------------------------------------
+
+	# Photo
+	my $photo = '';
+	$photo = $inrec->{'Photo 1'};
+	$outrec->{'Photo'} = '';
+
+	#-----------------------------------------
+
+	my $mediaflag = '';
+	$mediaflag = $inrec->{'Media Flag'};
+	$outrec->{'MediaFlag'} = '';
+	#-----------------------------------------
+
+	my $medialink = $inrec->{'Media Link'};
+	my $mediapath = '';
+	if ( $mediaflag =~ m/1 Photo|Multiphotos/ig ) {
+		if ( $medialink =~ /(http:\/\/www.caarmls.com.*?.jpg>)/ix ) {
+			$mediapath = $1;
+		}
+	}
+	$outrec->{'MediaLink'} = '';
+
+	#-----------------------------------------
+
+	# ML Number
+	my $mlnumber = '';
+	$mlnumber = $inrec->{'MLS#'};
+	$outrec->{'MLNumber'} = $mlnumber;
+
+	#-----------------------------------------
+
+	# ML Prop Type
+	$proptype             = '';
+	$proptype             = $inrec->{'PropType'};
+	$outrec->{'PropType'} = $proptype;
+
+	#-----------------------------------------
+
+	# ML County
+	my $county = '';
+	my $area   = '';
+	$area = $inrec->{'Cnty/IncC'};
+	switch ($area) {
+		case '001' { $county = "Albemarle" }
+		case '002' { $county = "Amherst" }
+		case '003' { $county = "Augusta" }
+		case '004' { $county = "Buckingham" }
+		case '005' { $county = "Charlottesville" }
+		case '006' { $county = "Culpeper" }
+		case '007' { $county = "Fauquier" }
+		case '008' { $county = "Fluvanna" }
+		case '009' { $county = "Goochland" }
+		case '010' { $county = "Greene" }
+		case '011' { $county = "Louisa" }
+		case '012' { $county = "Madison" }
+		case '013' { $county = "Nelson" }
+		case '014' { $county = "Orange" }
+		case '015' { $county = "Rockbridge" }
+		case '016' { $county = "Waynesboro" }
+		case '017' { $county = "Other" }
+	}
+	$outrec->{'County'} = $county;
+
+	#-----------------------------------------
+
+	# DateofPriorSale1
+	my $dateofPriorSale1 = '';
+	$outrec->{'DateofPriorSale1'} = $dateofPriorSale1;
+
+	#-----------------------------------------
+
+	# PriceofPriorSale1
+	my $priceofPriorSale1 = '';
+	$outrec->{'PriceofPriorSale1 '} = $priceofPriorSale1;
+
+	#-----------------------------------------
+
+	# DataSourcePrior1
+	my $dataSourcePrior1 = "Assessors Records";
+	if ( $area >= 9 ) {
+		$dataSourcePrior1 = "Courthouse Records";
+	}
+	$outrec->{'DataSourcePrior1'} = $dataSourcePrior1;
+
+	#-----------------------------------------
+
+	# EffectiveDatePrior1
+	my $effectiveDatePrior1 = '';
+	$outrec->{'EffectiveDatePrior1'} = $effectiveDatePrior1;
+
+	#-----------------------------------------
+
+	# Agent Notes
+	my $agentNotes = ''; #$inrec->{'Agent Notes'};
+	if ( defined $agentNotes ) {
+
+		# $outrec->{'AgentNotes'} = $agentNotes;
+		$outrec->{'AgentNotes'} = '';
+	}
+
+	#-----------------------------------------
+
+	# Dependencies
+	my $dependencies = $inrec->{'Dependencies'};
+	if ( defined $dependencies ) {
+		$outrec->{'Dependencies'} = $dependencies;
+	}
+
+	#-----------------------------------------
+
+	# Zoning
+	my $zoning = $inrec->{'Zoning'};
+	if ( defined $zoning ) {
+		$outrec->{'Zoning'} = $zoning;
+	}
+
+	#-----------------------------------------
+
+	# Hoa Fee
+	my $hoafee = $inrec->{'AssnFee'};
+	if ( defined $hoafee ) {
+		$outrec->{'HoaFee'} = $hoafee;
+	}
+
+	#-----------------------------------------
+
+	#condo specific
+
+	my $aprop = $inrec->{'PropType'};
+	if ( $aprop =~ /Condo/ig ) {
+
+		# Unit Number
+		my $unitnum = $inrec->{'Unit#'};
+		$outrec->{'Unitnum'} = $unitnum;
+
+# Amenities
+#Art Studio | Bar/Lounge | Baseball Field | Basketball Court | Beach | Billiard Room
+#| Boat Launch | Clubhouse | Community Room | Dining Rooms | Exercise Room | Extra Storage
+#| Golf | Guest Suites | Lake | Laundry Room | Library | Meeting Room | Newspaper Serv.
+#| Picnic Area | Play Area | Pool | Riding Trails | Sauna | Soccer Field | Stable
+#| Tennis | Transportation Service | Volleyball | Walk/Run Trails
+
+# | Walk/Run Trails | Boat Launch | Clubhouse | Community Room | Exercise Room
+# | Extra Storage | Golf | Play Area | Pool | Riding Trails | Sauna | Stable Tennis | Walk/Run Trails
+
+		my $amenities = $inrec->{'Amenities(HOA/Club/Sub)'};
+		$outrec->{'Amenities'} = $amenities;
+
+		# stories
+		# 1-4 stories:  stories
+		# 5-7:			mid-rise
+		# 8 and higher: High-rise
+
+		# address modified with unit number
+		$outrec->{'Address1'} = $outrec->{'Address1'} . ", #" . $unitnum;
+
+		# location set to city
+
+		# subdivision set to project name
+
+	}
+
+	#-----------------------------------------
+	#-----------------------------------------
+	# CAAR_Resid Last Line
+	#my $pnum = 1;
+	while ( my ( $k, $v ) = each %$outrec ) {
+		print $outfile "$v\t";
+
+		# print "$pnum\n";
+		# $pnum = $pnum+1;
+	}
+	print $outfile "\n";
+
+}
