@@ -940,10 +940,10 @@ sub CAAR_Resid {
 	$outrec->{'FunctionalUtility'} = "Average";
 
 	#-----------------------------------------
-
+	
 # EnergyEfficiencies1
-# EcoCert: LEED Certified | Energy Star | EarthCraft | Energy Wise | WaterSense� Certified Fixtures
-# Heating: Active Solar | Geothermal | Passive Solar
+# EcoCert: LEED Certified  Energy Star | EarthCraft | Energy Wise | WaterSense Certified Fixtures
+# Heating: Active Solar | Geothermal | passive Solar
 # Windows: Insulated | Low-E
 # Water Heater: Instant | Solar | Tankless
 
@@ -998,6 +998,7 @@ sub CAAR_Resid {
 	$outrec->{'EnergyEfficiencies1'} = $energyeff;
 
 	#-----------------------------------------
+
 
 # Rooms
 # From CAAR MLS:
@@ -1650,7 +1651,7 @@ sub CAAR_Resid_Text {
 	  gla          => $or->{'SqFt'}.$w.$w,
 	  basement     => $or->{'Basement1'},
 	  basementrm   => $or->{'Basement2'},
-	  funcutil     => '',
+	  funcutil     => "Average".$w,
 	  heatcool     => '',
 	  energyeff    => '',
 	  garage       => '',
@@ -2335,7 +2336,7 @@ sub CAAR_Resid_NG {
 	#-----------------------------------------
 
 # EnergyEfficiencies1
-# EcoCert: LEED Certified | Energy Star | EarthCraft | Energy Wise | WaterSense� Certified Fixtures
+# EcoCert: LEED Certified | Energy Star | EarthCraft | Energy Wise | WaterSense Certified Fixtures
 # Heating: Active Solar | Geothermal | Passive Solar
 # Windows: Insulated | Low-E
 # Water Heater: Instant | Solar | Tankless
