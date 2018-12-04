@@ -1,8 +1,13 @@
 111 Street AveCIty, ST 12345CItyST123450.00 miles N1000.04CAARMLS# 4444444;DOM 90CAARMLS# 444444490Tax RecordsArmLthConv;0Conventional0s02/17;c01/17Settled saleX01/1702/17N;Res;NeutralResidentialFee Simple21780 sfN;Res;NeutralResidentialDT2;Colonial
 X2ColonialQ310C3742.12,5002500sf1000sfwo25001000Walk-out1rr1br1.1ba1o111.11AverageFWA/CACInsulWnd&Drs2ga2dw22CvP,Deck1 Fireplace
 
+
+
 111 Street AveCIty, ST 12345CItyST123450.00 miles N1000.04CAARMLS# 4444444;DOM 90CAARMLS# 444444490Tax RecordsArmLthTest;0Other (describe)Test0s02/17;c01/17Settled saleX01/1702/17N;Res;NeutralResidentialFee Simple21780 sfN;Res;NeutralResidentialDT2;Colonial
 X2ColonialQ310C3742.12,5002500sf1000sfwo25001000Walk-out1rr1br1.1ba1o111.11AverageFWA/CACInsulWnd&Drs2ga2dw22CvP,Deck1 Fireplace
+
+
+
 
 111 Street AveCIty, ST 12345CItyST123450.00 miles N1000.04CAARMLS# 4444444;DOM 90CAARMLS# 444444490Tax RecordsArmLthRH;0USDA - Rural housing0s02/17;c01/17Settled saleX01/1702/17N;Res;NeutralResidentialFee Simple21780 sfN;Res;NeutralResidentialDT2;Colonial
 x2ColonialQ310
@@ -46,3 +51,5 @@
 #   22
 #CvP,Deck
 #1 Fireplace
+
+940 Charter Oaks DrCharlottesville, VA 22901CharlottesvilleVA22901540,000135.00CAARMLS #556903;DOM 32CAARMLS #55690332Tax RecordsArmLthPrvMtg;300Other (describe)PrvMtg300s04/17;c03/17Settled saleX03/1704/17N;Res;NeutralResidentialFee Simple17860 sfN;Res;NeutralResidentialDT2x221942.14,0001770sf683sfin1770683Interior-only1rr1br1.0ba0o111.00

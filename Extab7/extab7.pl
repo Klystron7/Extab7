@@ -340,6 +340,9 @@ sub CAAR_Resid {
 	my ($inrec)   = shift;
 	my ($outrec)  = shift;
 	my ($outfile) = shift;
+	
+	# Backspace character used between fields in Wintotal
+	my $w = sprintf( '%c', 8 );
 
 	my $tc = Lingua::EN::Titlecase->new("initialize titlecase");
 	my %addrArgs = (
@@ -758,6 +761,7 @@ sub CAAR_Resid {
 	#-----------------------------------------
 
 	# DesignAppeal
+
 	my $stories  = "";
 	my $design   = "";
 	my $design_uad = '';
@@ -903,6 +907,7 @@ sub CAAR_Resid {
 	}
 	
 	$outrec->{'CarStorage1'} = $carstortype;
+	$outrec->{'CarStorage1Txt'} = 
 
 	#-----------------------------------------
 
@@ -922,7 +927,7 @@ sub CAAR_Resid {
 		} else {
 			$cool = "No CAC";
 		}
-		if ( $heating =~ /Forced Air|Furnace|Ceiling|Gas|Liquid Propane/i ) {
+		if ( $heating =~ /Forced Air|Furnace/i ) {
 			$heat = "FWA";
 		} elsif ( $heating =~ /Electric/i ) {
 			$heat = "EBB";
@@ -1107,6 +1112,7 @@ sub CAAR_Resid {
 	$outrec->{'Rooms'} = $rooms;
 
 	my $bsRmList = '';
+	my $bsRmListTxt = '';
 #	if ( $bsRmCount > 0 ) {
 #		if ( $bsRecRm > 0 )    { $bsRmList = $bsRecRm . "rr"; }
 #		if ( $bsBedrooms > 0 ) { $bsRmList = $bsRmList . $bsBedrooms . "br"; }
@@ -1116,9 +1122,11 @@ sub CAAR_Resid {
 #		if ( $bsOther > 0 ) { $bsRmList = $bsRmList . $bsOther . "o"; }
 #	}
 	$bsRmList = $bsRecRm . 'rr' . $bsBedrooms . 'br' . $bsFullbath . '.' . $bsHalfbath . 'ba' . $bsOther . 'o';
+	$bsRmListTxt = $bsRecRm . $w . $bsBedrooms . $w . $bsFullbath . '.' . $bsHalfbath . $w . $bsOther;
 	
 	# Basement2
 	$outrec->{'Basement2'} = $bsRmList;
+	$outrec->{'Basement2Txt'} = $bsRmListTxt;
 	$outrec->{'BsRecRm'} = $bsRecRm;
 	$outrec->{'BsBedRm'} = $bsBedrooms;
 	$outrec->{'BsFullB'} = $bsFullbath;
@@ -1255,6 +1263,7 @@ sub CAAR_Resid {
 	#my $listdate = Date::EzDate->new( $inrec->{'List Date'} );
 	#if ( $listdate >= $sfDate ) {
 	my $basType = "wo";
+	my $basTypeTxt = "Walk-out";
 	if ( $sfAGFin > 0 ) {
 		$outrec->{'SqFt'} = $sfAGFin;
 		if ( $sfBGTot == 0 ) {
@@ -1263,18 +1272,22 @@ sub CAAR_Resid {
 			my $basExit = $inrec->{'Bsmnt_2'};
 			if ( $basExit =~ /Walk Out/ig ) {
 				$basType = "wo";
+				$basTypeTxt = "Walk-out";
 			} elsif ( $basExit =~ /Outside Entrance/ig ) {
 				$basType = "wu";
+				$basTypeTxt = "Walk-up";
 			} elsif ( $basExit =~ /Inside Access/ig ) {
 				$basType = "in";
+				$basTypeTxt = "Interior-only";
 			} 
 
 			#Walk Out
 			if ( $sfBGFin == 0 ) {
 				$outrec->{'Basement1'} = $sfBGTot . "sf" . 0 . $basType;
+				$outrec->{'Basement1Txt'} = $sfBGTot . $w . 0 . $w . $basTypeTxt;
 			} else {
-				$outrec->{'Basement1'} =
-				  $sfBGTot . "sf" . $sfBGFin . "sf" . $basType;
+				$outrec->{'Basement1'} = $sfBGTot . "sf" . $sfBGFin . "sf" . $basType;
+				$outrec->{'Basement1Txt'} = $sfBGTot . $w . $sfBGFin . $w . $basTypeTxt;
 			}
 		}
 	} else {
@@ -1649,14 +1662,14 @@ sub CAAR_Resid_Text {
 	  condition    => $w.$w.$w,
 	  roomcnt      => $rooms,
 	  gla          => $or->{'SqFt'}.$w.$w,
-	  basement     => $or->{'Basement1'},
-	  basementrm   => $or->{'Basement2'},
-	  funcutil     => "Average".$w,
-	  heatcool     => '',
-	  energyeff    => '',
-	  garage       => '',
-	  pchpatdk     => '',
-	  fireplace    => '';
+	  basement     => $or->{'Basement1'}.$w.$or->{'Basement1Txt'}.$w.$w,
+	  basementrm   => $or->{'Basement2'}.$w.$or->{'Basement2Txt'}.$w.$w,
+	  funcutil     => "Average".$w.$w,
+	  heatcool     => $or->{'CoolingType'}.$w.$w,
+	  energyeff    => $or->{'EnergyEfficiencies1'}.$w.$w,
+	  garage       => $or->{'CarStorage1'}.$w.$w,
+	  pchpatdk     => $or->{'FencePorchPatio2'}.$w.$w,
+	  fireplace    => $or->{'ExtraCompInfo1'}.$w.$w;
 	  
 	  my $x = 1;
 	  print $outfile "\n";
