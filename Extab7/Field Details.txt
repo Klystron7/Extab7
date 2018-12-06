@@ -16,6 +16,10 @@ Basement:
 111.11
 
 
+No Basement:
+1,8660sf00000.00Average
+
+
 Garage:
 
 1ga2gd3gbi4cp5dw

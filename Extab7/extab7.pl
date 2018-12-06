@@ -774,14 +774,13 @@ sub CAAR_Resid {
 	#$stories =~ s/\D//;
 	$stories =~ s/[^0-9\.]//ig;
 	$outrec->{'Stories'} = $stories;
-		
-	if ( $proptype =~ /Detached/ig ) {
-		$design  = $inrec->{'Design'};
-		$design_uad = 'DT'.$stories.';'.$design;
-	}
 	
+	$design  = $inrec->{'Design'};
+	$design =~ tr/ //ds;		
+	if ( $proptype =~ /Detached/ig ) {
+		$design_uad = 'DT'.$stories.';'.$design;
+	}	
 	elsif ( $proptype =~ /Attached/ig ) {
-		$design = $inrec->{'Design'};
 		if ( $atthome =~ /End Unit/ig ) {
 			$design_uad ='SD'. $stories . ';' . $design;
 		} elsif ( $atthome =~ /Duplex/ig ) {
@@ -1290,6 +1289,9 @@ sub CAAR_Resid {
 		$outrec->{'SqFt'} = $sfAGFin;
 		if ( $sfBGTot == 0 ) {
 			$outrec->{'Basement1'} = "0sf";
+			$outrec->{'Basement1Txt'} = 0 . $w . 0;
+			$outrec->{'Basement2'} = $w;
+			$outrec->{'Basement2Txt'} = 0 . $w . 0 . $w . "0.0" . $w . 0;
 		} else {
 			my $basExit = $inrec->{'Bsmnt_2'};
 			if ( $basExit =~ /Walk Out/ig ) {
