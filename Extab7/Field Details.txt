@@ -1,5 +1,11 @@
-Basement:
+Design:
 
+DT3;ContempX3ContempQ30
+DT3        X3       Q30
+conclusion: design field can stay empty
+
+
+Basement:
 
 2500sf1000sfwo
 
@@ -8,3 +14,9 @@ Basement:
 1rr1br1.1ba1o
 
 111.11
+
+
+Garage:
+
+1ga2gd3gbi4cp5dw
+12345

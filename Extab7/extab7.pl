@@ -783,11 +783,11 @@ sub CAAR_Resid {
 	elsif ( $proptype =~ /Attached/ig ) {
 		$design = $inrec->{'Design'};
 		if ( $atthome =~ /End Unit/ig ) {
-			$design_uad ='SD'. $stories . ';' . $design . '/End';
+			$design_uad ='SD'. $stories . ';' . $design;
 		} elsif ( $atthome =~ /Duplex/ig ) {
-			$design_uad ='SD'. $stories . ';' . $design . '/Dup';
+			$design_uad ='SD'. $stories . ';' . $design;
 		} else {
-			$design_uad ='AT'. $stories . ';' . $design . '/Int';
+			$design_uad ='AT'. $stories . ';' . $design;
 		}
 	}
 	$outrec->{'Design'} = $design;
@@ -799,7 +799,14 @@ sub CAAR_Resid {
 	my $age = 0;
 
 	#$age = $time{'yyyy'} - $inrec->{'Year Built'};
-	$age = localtime->year + 1900 - $inrec->{'YearBuilt'};
+	
+	# Age calculated from current year
+	#$age = localtime->year + 1900 - $inrec->{'YearBuilt'};
+	
+	# Age calculated from year sold
+	my $sdate = $inrec->{'Close Date'};
+	my @da = ( $sdate =~ m/(\d+)/g );
+	$age = $da[2] - $inrec->{'YearBuilt'};
 	
 	$outrec->{'Age'} = $age;
 
@@ -810,18 +817,22 @@ sub CAAR_Resid {
 	my $extcond = '';
 	# use price per square foot after location/land
 	
-	if ( $soldprice > 800000 ) {
+	my $soldpriceint = $soldprice;
+	$soldpriceint =~ s/^\$//;
+	$soldpriceint =~ s/,//g;
+	
+	if ( $soldpriceint > 2000000 ) {
 		$extcond = "Q1";
-	} elsif ( $soldprice > 500000 ) {
+	} elsif ( $soldpriceint > 1000000 ) {
 		$extcond = "Q2";
-	} elsif ( $soldprice > 150000 ) {
+	} elsif ( $soldpriceint > 175000 ) {
 		$extcond = "Q3";
-	} elsif ( $soldprice > 50000 ) {
+	} elsif ( $soldpriceint > 80000 ) {
 		$extcond = "Q4";
 	} else {
 		$extcond = "";
 	}
-	$extcond = '';
+	#$extcond = '';
 	$outrec->{'DesignConstrQual'} = $extcond;
 
 	#-----------------------------------------
@@ -841,7 +852,7 @@ sub CAAR_Resid {
 #	} else {
 #		$agecondition = $agecond;
 #	}
-	$agecond = '';
+	#$agecond = '';
 	$outrec->{'AgeCondition1'} = $agecond;
 
 	#-----------------------------------------
@@ -1144,9 +1155,20 @@ sub CAAR_Resid {
 
 	# Baths
 	my $baths = 0;
-	if ( $fullbath == 0 ) {
-		$fullbath = $inrec->{'#FBaths'};
-		$halfbath = $inrec->{'#HBaths'};
+#	if ( $fullbath == 0 ) {
+#		$fullbath = $inrec->{'#FBaths'};
+#		$halfbath = $inrec->{'#HBaths'};
+#	}
+
+	$fullbath = $inrec->{'#FBaths'};
+	$halfbath = $inrec->{'#HBaths'};
+	my $bgbath = $inrec->{'#BathsBG'};
+	if ($bgbath =~ /.5/){
+		$halfbath = $halfbath - 1;
+		$bgbath = $bgbath - 1;
+	}
+	if ($bgbath >= 1){
+		$fullbath = $fullbath - $bgbath;
 	}
 	my $bathnum = $fullbath + $halfbath / 10;
 	my $bathstr = "$fullbath.$halfbath";
@@ -1657,9 +1679,9 @@ sub CAAR_Resid_Text {
 	  site         => $or->{'LotSize'}.$w.$w,
 	  view         => "N;Res".$w."Neutral".$w."Residential".$w.$w.$w.$w.$w,,
 	  designstyle  => $or->{'DesignAppeal1'}.$w.$design,
-	  quality      => $w.$w,
+	  quality      => $or->{'DesignConstrQual'}.$w.$w,
 	  age          => $or->{'Age'}.$w.$w,
-	  condition    => $w.$w.$w,
+	  condition    => $or->{'AgeCondition1'}.$w.$w.$w,
 	  roomcnt      => $rooms,
 	  gla          => $or->{'SqFt'}.$w.$w,
 	  basement     => $or->{'Basement1'}.$w.$or->{'Basement1Txt'}.$w.$w,
