@@ -61,6 +61,23 @@ use Win32::TieRegistry 0.25 (
 
 our $Run_CompImp = 0;
 
+my $top = new MainWindow;
+$top->withdraw();
+
+#$top->Button(-text    => 'Problem: exit',
+#            -command => sub { exit }
+#     )->pack;
+#$top->Button(-text    => 'Solution: destroy',
+#            -command => sub { $top->destroy }
+#     )->pack;
+#
+#my $t = $top-> Scrolled('Text', wrap=>'none')->pack(-expand=>1);
+#
+#MainLoop;
+#
+#print "After MainLoop\n";
+
+	
 my $os = Win32::GetOSName();
 if ( $os =~ /WinXP/ig ) {
 	my $test = 1;
@@ -162,11 +179,12 @@ sub preProcInputFile {
 	my $dir      = '';
 	my $csv_file = '';
 	my $filename = $_[0];
+	
 	if ( !defined $filename ) {
 
 		# get file for processing
-		my $top = new MainWindow;
-		$top->withdraw();
+
+		#$top->withdraw();
 
 		$dir = "C:\\Documents and Settings\\Ernest\\workspace\\extab6uad\\CAAR-Paragon Conversion";
 		$dir = "X:\\";
