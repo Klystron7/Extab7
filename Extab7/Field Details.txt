@@ -18,6 +18,9 @@ Basement:
 
 No Basement:
 1,8660sf00000.00Average
+1,8660sf00000.00Average
+1,8660rr0br0.0ba0o00.0rr0brbao0.00HTP
+1,8660sf00000.00AverageHTPNonePch Deck 0 Fireplace
 
 
 Garage:
