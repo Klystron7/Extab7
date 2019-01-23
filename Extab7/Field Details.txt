@@ -1,3 +1,5 @@
+1004 Comp
+
 Design:
 
 DT3;ContempX3ContempQ30
@@ -27,3 +29,37 @@ Garage:
 
 1ga2gd3gbi4cp5dw
 12345
+
+
+Condo:
+137 Green Turtle Ln
+5, Charlottesville, VA 22901
+5CharlottesvilleVA22901
+Turtle Creek Condos
+7
+0.29 miles NE
+95,000
+126.84
+CAARMLS#564245;DOM 2
+CAARMLS#5642452
+Tax Records
+ArmLthCash;0
+Cash0
+s07/17;c07/17
+Settled saleX07/1707/17
+N;Res;NeutralResidential
+Fee Simple
+230Pool,Tennis0Fitness Ctr020
+N;Res;NeutralResidential
+GR1L;ContempX1Contemp
+Q3300C3-6,000411.0749-1,8300sf00000.00AverageHTP0InsWnd&Drs2op002CvPat-2,0001 Fireplace-2,000
+
+
+230Pool,TennisFitness Ctr2
+
+
+Fee Simple
+230
+
+
+ResidentialN;Res;NeutralResidentialQ423C3
