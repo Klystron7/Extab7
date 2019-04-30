@@ -63,3 +63,23 @@ Fee Simple
 
 
 ResidentialN;Res;NeutralResidentialQ423C3
+
+
+230
+
+
+N;Res0Residential030L30+34+11.0+749000sf000
+
+
+
+Fee Simple
+230
+
+
+0Residential;3030C3+4C1
+
+
+
+123 Anystreet StPalmyra, VA 22963MLS #579973; DOM 24198,00010/31/20181.0 Ac1,50032.092 Car Built-in GarageBsmnt: 850sf/0sf FinCvP
+
+
